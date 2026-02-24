@@ -3,159 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolveStats | PB Tracker</title>
+    <title>SolveStats | Pro Dashboard</title>
     <script src="https://cdn.jsdelivr.net"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
         :root {
-            --bg-dark: #121212;
-            --sidebar-bg: #181818;
-            --card-bg: #242424;
+            --bg-dark: #0f0f0f;
+            --sidebar-bg: #161616;
+            --card-bg: #1e1e1e;
             --accent: #3498db;
-            --text-main: #ffffff;
-            --text-dim: #b3b3b3;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
             --success: #2ecc71;
+            --border: #333;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
 
         /* Sidebar */
         .sidebar {
-            width: 240px;
+            width: 220px;
             background-color: var(--sidebar-bg);
-            border-right: 1px solid #333;
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 25px;
         }
 
-        .sidebar h2 { color: var(--accent); font-size: 1.5rem; margin-bottom: 30px; }
+        .sidebar h2 { color: var(--accent); font-size: 1.4rem; margin-bottom: 40px; letter-spacing: 1px; }
         .nav-item {
-            padding: 12px;
+            padding: 12px 15px;
             color: var(--text-dim);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             border-radius: 8px;
-            transition: 0.3s;
+            margin-bottom: 5px;
+            transition: 0.2s;
         }
-        .nav-item:hover, .nav-item.active {
-            background: var(--card-bg);
-            color: white;
-        }
+        .nav-item:hover, .nav-item.active { background: var(--card-bg); color: white; }
 
         /* Main Content */
         .main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 30px;
+            padding: 40px;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
 
         .import-btn {
             background: var(--accent);
             color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 6px;
             cursor: pointer;
             border: none;
-            font-weight: bold;
+            font-weight: 600;
+            transition: 0.2s;
         }
+        .import-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
         /* Grid for PB Cards */
         .pb-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
-            margin-bottom: 40px;
         }
 
         .pb-card {
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
-            border-bottom: 4px solid var(--accent);
+            border: 1px solid var(--border);
+            transition: 0.3s;
         }
+        .pb-card:hover { border-color: var(--accent); }
 
-        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; }
-        .pb-card .time { font-size: 2rem; font-weight: bold; margin: 10px 0; color: var(--success); }
-        .pb-card .avg-info { font-size: 0.85rem; color: var(--text-dim); }
+        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pb-card .time { font-size: 1.8rem; font-weight: 700; margin: 12px 0; color: var(--text-main); }
+        .pb-card .avg-info { font-size: 0.8rem; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; }
+        .pb-card .avg-info span { color: var(--success); font-weight: 600; }
+
+        input[type="file"] { display: none; }
 
         /* Chart Section */
         .chart-container {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 20px;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 40px;
+            border: 1px solid var(--border);
         }
-
-        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Sidemeny -->
     <div class="sidebar">
-        <h2>SolveStats</h2>
-        <a href="#" class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-history"></i> Historikk</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-trophy"></i> Rekorder</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> Innstillinger</a>
+        <h2>SOLVESTATS</h2>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-stopwatch"></i> Sessions</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-chart-simple"></i> Analytics</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-user"></i> Profil</a>
     </div>
 
-    <!-- Hovedinnhold -->
     <div class="main-content">
         <header>
-            <h1>Min Oversikt</h1>
+            <div>
+                <h1 style="margin:0">PB Dashboard</h1>
+                <p style="color:var(--text-dim); margin-top:5px;">Oversikt over dine personlige rekorder</p>
+            </div>
             <label for="fileInput" class="import-btn">
-                <i class="fa-solid fa-file-import"></i> Import fra csTimer
+                <i class="fa-solid fa-upload"></i> Last opp csTimer-data
             </label>
             <input type="file" id="fileInput" accept=".txt,.json">
         </header>
 
-        <div class="pb-grid">
-            <!-- 3x3 Card -->
-            <div class="pb-card">
-                <h3>3x3 Single</h3>
-                <div class="time" id="333-single">--.--</div>
-                <div class="avg-info">Ao5: <span id="333-ao5">--.--</span></div>
-            </div>
-            <!-- 4x4 Card -->
-            <div class="pb-card">
-                <h3>4x4 Single</h3>
-                <div class="time" id="444-single">--.--</div>
-                <div class="avg-info">Ao5: <span id="444-ao5">--.--</span></div>
-            </div>
-            <!-- OH Card -->
-            <div class="pb-card">
-                <h3>3x3 OH Single</h3>
-                <div class="time" id="oh-single">--.--</div>
-                <div class="avg-info">Ao5: <span id="oh-ao5">--.--</span></div>
-            </div>
+        <div class="pb-grid" id="pb-grid">
+            <!-- Denne fylles nå automatisk av JavaScript -->
         </div>
 
         <div class="chart-container">
-            <h3>Fremgang (Siste 50 solves)</h3>
-            <canvas id="solveChart"></canvas>
+            <h3 id="chart-title">Velg en øvelse for å se graf</h3>
+            <canvas id="solveChart" height="100"></canvas>
         </div>
     </div>
 
     <script>
+        // Liste over alle WCA events (minus FMC) med deres csTimer-koder
+        const events = {
+            "333": "3x3", "222": "2x2", "444": "4x4", "555": "5x5", "666": "6x6", "777": "777",
+            "333oh": "3x3 OH", "333bf": "3x3 BLD", "minx": "Megaminx", "pyram": "Pyraminx",
+            "clock": "Clock", "skewb": "Skewb", "sq1": "Square-1", "444bf": "4x4 BLD", "555bf": "5x5 BLD"
+        };
+
         let solveChart;
+        let allData = {};
+
+        // Generer tomme kort ved start
+        const grid = document.getElementById('pb-grid');
+        Object.keys(events).forEach(key => {
+            grid.innerHTML += `
+                <div class="pb-card" onclick="showGraph('${key}')" style="cursor:pointer">
+                    <h3>${events[key]}</h3>
+                    <div class="time" id="${key}-single">--.--</div>
+                    <div class="avg-info">PB Ao5: <span id="${key}-ao5">--.--</span></div>
+                </div>
+            `;
+        });
 
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -164,56 +173,85 @@
             reader.onload = function(event) {
                 try {
                     const data = JSON.parse(event.target.result);
-                    // Logikk for å finne 3x3 tider (vanligvis session1 i csTimer)
-                    const session1 = data.session1 || [];
-                    const times = session1.map(s => s[0][1] / 1000).filter(t => t > 0);
+                    const properties = JSON.parse(data.properties);
                     
-                    if (times.length > 0) {
-                        updateUI(times);
+                    // Gå gjennom alle sessions
+                    for (let i = 1; i <= 100; i++) {
+                        const sessionKey = "session" + i;
+                        if (data[sessionKey]) {
+                            // Finn ut hvilken event denne sessionen tilhører
+                            const meta = JSON.parse(properties.sessionData)[i];
+                            const scrambleType = meta ? meta.opt.scrType : "333";
+                            
+                            if (events[scrambleType]) {
+                                // Hent tider (csTimer lagrer som [ms, scramble, osv])
+                                const times = data[sessionKey].map(s => s[0][1] / 1000).filter(t => t > 0);
+                                if (times.length > 0) {
+                                    if (!allData[scrambleType]) allData[scrambleType] = [];
+                                    allData[scrambleType] = allData[scrambleType].concat(times);
+                                }
+                            }
+                        }
                     }
+                    updateDashboard();
                 } catch (err) {
+                    console.error(err);
                     alert("Kunne ikke lese csTimer-filen.");
                 }
             };
             reader.readAsText(file);
         });
 
-        function updateUI(times) {
-            // Oppdater PB Single
-            const pb = Math.min(...times).toFixed(2);
-            document.getElementById('333-single').innerText = pb + "s";
+        function updateDashboard() {
+            Object.keys(allData).forEach(key => {
+                const times = allData[key];
+                const single = Math.min(...times).toFixed(2);
+                document.getElementById(`${key}-single`).innerText = single;
 
-            // Oppdater Ao5 (Veldig forenklet snitt av siste 5)
-            if (times.length >= 5) {
-                const last5 = times.slice(-5);
-                const avg = (last5.reduce((a, b) => a + b) / 5).toFixed(2);
-                document.getElementById('333-ao5').innerText = avg + "s";
-            }
-
-            renderChart(times.slice(-50));
+                // Beregn beste Ao5 i historikken
+                let bestAo5 = Infinity;
+                for (let i = 0; i <= times.length - 5; i++) {
+                    const ao5 = times.slice(i, i+5).reduce((a,b) => a+b) / 5;
+                    if (ao5 < bestAo5) bestAo5 = ao5;
+                }
+                if (bestAo5 !== Infinity) {
+                    document.getElementById(`${key}-ao5`).innerText = bestAo5.toFixed(2);
+                }
+            });
+            // Vis 3x3 graf som standard etter import
+            if (allData["333"]) showGraph("333");
         }
 
-        function renderChart(data) {
+        function showGraph(key) {
+            const times = allData[key];
+            if (!times) return;
+
+            document.getElementById('chart-title').innerText = `Fremgang: ${events[key]} (Alle tider)`;
             const ctx = document.getElementById('solveChart').getContext('2d');
             if (solveChart) solveChart.destroy();
 
             solveChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.map((_, i) => i + 1),
+                    labels: times.map((_, i) => i + 1),
                     datasets: [{
-                        label: 'Tid (sekunder)',
-                        data: data,
+                        label: 'Tid (s)',
+                        data: times,
                         borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
                         fill: true,
-                        tension: 0.3
+                        backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                        tension: 0.1
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: '#333' } }, x: { grid: { display: false } } }
+                    scales: {
+                        y: { grid: { color: '#222' }, ticks: { color: '#666' } },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
