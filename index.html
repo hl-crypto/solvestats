@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolveStats | PB Dashboard</title>
+    <title>SolveStats | Professional Dashboard</title>
     <script src="https://cdn.jsdelivr.net"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
@@ -28,6 +28,7 @@
             overflow: hidden;
         }
 
+        /* Sidebar */
         .sidebar {
             width: 220px;
             background-color: var(--sidebar-bg);
@@ -37,8 +38,7 @@
             padding: 25px;
         }
 
-        .sidebar h2 { color: var(--accent); font-size: 1.4rem; margin-bottom: 40px; }
-        
+        .sidebar h2 { color: var(--accent); font-size: 1.4rem; margin-bottom: 40px; letter-spacing: 1px; }
         .nav-item {
             padding: 12px 15px;
             color: var(--text-dim);
@@ -48,9 +48,11 @@
             gap: 12px;
             border-radius: 8px;
             margin-bottom: 5px;
+            transition: 0.2s;
         }
         .nav-item:hover, .nav-item.active { background: var(--card-bg); color: white; }
 
+        /* Main Content */
         .main-content {
             flex: 1;
             overflow-y: auto;
@@ -70,10 +72,14 @@
             padding: 12px 24px;
             border-radius: 6px;
             cursor: pointer;
+            border: none;
             font-weight: 600;
+            transition: 0.2s;
             display: inline-block;
         }
+        .import-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
+        /* Grid for PB Cards */
         .pb-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -85,23 +91,26 @@
             padding: 15px;
             border-radius: 10px;
             border: 1px solid var(--border);
+            transition: 0.2s;
             cursor: pointer;
         }
-        .pb-card:hover { border-color: var(--accent); }
-        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
+        .pb-card:hover { border-color: var(--accent); background: #252525; }
+        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .pb-card .time { font-size: 1.6rem; font-weight: 700; margin: 10px 0; color: #fff; }
         .pb-card .avg-info { font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 8px; }
+        .pb-card .avg-info span { color: var(--success); font-weight: 600; }
 
+        input[type="file"] { display: none; }
+
+        /* Chart Section */
         .chart-container {
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
             margin-top: 30px;
             border: 1px solid var(--border);
-            min-height: 250px;
+            min-height: 300px;
         }
-
-        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
@@ -117,18 +126,20 @@
         <header>
             <div>
                 <h1 style="margin:0">PB Dashboard</h1>
-                <p style="color:var(--text-dim); margin-top:5px;">Klikk på et kort for å se graf</p>
+                <p style="color:var(--text-dim); margin-top:5px;">Oversikt over alle dine WCA-øvelser</p>
             </div>
             <label for="fileInput" class="import-btn">
-                <i class="fa-solid fa-upload"></i> Import csTimer
+                <i class="fa-solid fa-upload"></i> Last opp csTimer-fil
             </label>
             <input type="file" id="fileInput" accept=".txt,.json">
         </header>
 
-        <div class="pb-grid" id="pb-grid"></div>
+        <div class="pb-grid" id="pb-grid">
+            <!-- Kortene genereres her -->
+        </div>
 
         <div class="chart-container">
-            <h3 id="chart-title">Venter på data...</h3>
+            <h3 id="chart-title">Klikk på en boks for å se graf</h3>
             <canvas id="solveChart"></canvas>
         </div>
     </div>
@@ -143,7 +154,6 @@
     let solveChart;
     let allData = {};
 
-    // Initialiser alle kort
     const grid = document.getElementById('pb-grid');
     Object.keys(eventMap).forEach(key => {
         grid.innerHTML += `
@@ -162,25 +172,29 @@
         const reader = new FileReader();
         reader.onload = function(event) {
             try {
-                const data = JSON.parse(event.target.result);
+                const rawJson = JSON.parse(event.target.result);
                 allData = {};
 
-                // Finn metadata (scrType)
+                // 1. Pakk ut sessionData fra properties-strengen
                 let sessionMeta = {};
-                if (data.properties) {
-                    const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
-                    sessionMeta = JSON.parse(props.sessionData || "{}");
+                if (rawJson.properties) {
+                    const props = typeof rawJson.properties === 'string' ? JSON.parse(rawJson.properties) : rawJson.properties;
+                    if (props.sessionData) {
+                        sessionMeta = JSON.parse(props.sessionData);
+                    }
                 }
 
-                // Gå gjennom alle sessions
-                Object.keys(data).forEach(key => {
-                    if (key.startsWith('session') && Array.isArray(data[key])) {
+                // 2. Gå gjennom hver session og finn tidene
+                Object.keys(rawJson).forEach(key => {
+                    if (key.startsWith('session') && Array.isArray(rawJson[key])) {
                         const sId = key.replace('session', '');
                         const scrType = sessionMeta[sId] ? sessionMeta[sId].opt.scrType : "333";
                         
-                        // Hent tider (ms til sekunder)
-                        const times = data[key].map(s => {
-                            if (Array.isArray(s) && s[0]) return s[0][0] / 1000;
+                        const times = rawJson[key].map(solve => {
+                            // csTimer lagrer solve som [[tid_i_ms, rest...], [mer_data...]]
+                            if (Array.isArray(solve) && solve[0] && Array.isArray(solve[0])) {
+                                return solve[0][0] / 1000;
+                            }
                             return null;
                         }).filter(t => t !== null && t > 0);
 
@@ -191,25 +205,28 @@
                     }
                 });
 
-                updateUI();
+                updateDashboard();
             } catch (err) {
-                alert("Kunne ikke lese csTimer-filen. Prøv en annen eksport.");
+                console.error("Import-feil:", err);
+                alert("Kunne ikke lese filen. Pass på at det er en .txt eller .json fra csTimer (Export -> File).");
             }
         };
         reader.readAsText(file);
     });
 
-    function updateUI() {
+    function updateDashboard() {
         Object.keys(allData).forEach(key => {
             const times = allData[key];
+            if (times.length === 0) return;
+
             const single = Math.min(...times).toFixed(2);
             document.getElementById(`${key}-single`).innerText = single + "s";
 
-            // Beregn beste Ao5 (Average of 5)
             let bestAo5 = Infinity;
             for (let i = 0; i <= times.length - 5; i++) {
                 const slice = times.slice(i, i + 5);
                 const sorted = [...slice].sort((a, b) => a - b);
+                // Ao5: Fjern raskeste og tregeste, ta snitt av de 3 i midten
                 const ao5 = (sorted[1] + sorted[2] + sorted[3]) / 3;
                 if (ao5 < bestAo5) bestAo5 = ao5;
             }
@@ -222,7 +239,7 @@
 
     function showGraph(key) {
         const times = allData[key];
-        if (!times) return;
+        if (!times || times.length === 0) return;
 
         document.getElementById('chart-title').innerText = "Fremgang: " + eventMap[key];
         const ctx = document.getElementById('solveChart').getContext('2d');
@@ -245,7 +262,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { grid: { color: '#333' } }, x: { display: false } }
+                scales: {
+                    y: { grid: { color: '#333' }, ticks: { color: '#888' } },
+                    x: { display: false }
+                }
             }
         });
     }
