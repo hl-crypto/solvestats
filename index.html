@@ -3,108 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolveStats - Cubing Dashboard</title>
+    <title>SolveStats | PB Tracker</title>
     <script src="https://cdn.jsdelivr.net"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 15px; }
-        h1 { color: #00ff88; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
-        .stat-card { background: #2a2a2a; padding: 15px; border-radius: 10px; border: 1px solid #333; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: #00ff88; }
-        input[type="file"] { margin: 20px 0; padding: 10px; color: white; }
-        canvas { background: #2a2a2a; border-radius: 10px; margin-top: 20px; padding: 10px; }
+        :root {
+            --bg-dark: #121212;
+            --sidebar-bg: #181818;
+            --card-bg: #242424;
+            --accent: #3498db;
+            --text-main: #ffffff;
+            --text-dim: #b3b3b3;
+            --success: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .sidebar h2 { color: var(--accent); font-size: 1.5rem; margin-bottom: 30px; }
+        .nav-item {
+            padding: 12px;
+            color: var(--text-dim);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: var(--card-bg);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .import-btn {
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+
+        /* Grid for PB Cards */
+        .pb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .pb-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border-bottom: 4px solid var(--accent);
+        }
+
+        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; }
+        .pb-card .time { font-size: 2rem; font-weight: bold; margin: 10px 0; color: var(--success); }
+        .pb-card .avg-info { font-size: 0.85rem; color: var(--text-dim); }
+
+        /* Chart Section */
+        .chart-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>SolveStats</h1>
-    <p>Last opp din <b>csTimer</b> export-fil (.txt eller .json) for å se statistikk.</p>
-    
-    <input type="file" id="fileInput" accept=".txt,.json">
-
-    <div class="stats-grid">
-        <div class="stat-card"><div>Best Single</div><div class="stat-value" id="pb-single">-</div></div>
-        <div class="stat-card"><div>Current Ao5</div><div class="stat-value" id="curr-ao5">-</div></div>
-        <div class="stat-card"><div>Total Solves</div><div class="stat-value" id="total-solves">-</div></div>
+    <!-- Sidemeny -->
+    <div class="sidebar">
+        <h2>SolveStats</h2>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-history"></i> Historikk</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-trophy"></i> Rekorder</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> Innstillinger</a>
     </div>
 
-    <canvas id="solveChart" width="400" height="200"></canvas>
-</div>
+    <!-- Hovedinnhold -->
+    <div class="main-content">
+        <header>
+            <h1>Min Oversikt</h1>
+            <label for="fileInput" class="import-btn">
+                <i class="fa-solid fa-file-import"></i> Import fra csTimer
+            </label>
+            <input type="file" id="fileInput" accept=".txt,.json">
+        </header>
 
-<script>
-    let solveChart;
+        <div class="pb-grid">
+            <!-- 3x3 Card -->
+            <div class="pb-card">
+                <h3>3x3 Single</h3>
+                <div class="time" id="333-single">--.--</div>
+                <div class="avg-info">Ao5: <span id="333-ao5">--.--</span></div>
+            </div>
+            <!-- 4x4 Card -->
+            <div class="pb-card">
+                <h3>4x4 Single</h3>
+                <div class="time" id="444-single">--.--</div>
+                <div class="avg-info">Ao5: <span id="444-ao5">--.--</span></div>
+            </div>
+            <!-- OH Card -->
+            <div class="pb-card">
+                <h3>3x3 OH Single</h3>
+                <div class="time" id="oh-single">--.--</div>
+                <div class="avg-info">Ao5: <span id="oh-ao5">--.--</span></div>
+            </div>
+        </div>
 
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
+        <div class="chart-container">
+            <h3>Fremgang (Siste 50 solves)</h3>
+            <canvas id="solveChart"></canvas>
+        </div>
+    </div>
 
-        reader.onload = function(event) {
-            try {
-                const data = JSON.parse(event.target.result);
-                // csTimer lagrer tider i 'session1', 'session2' osv.
-                // Vi henter den første sessionen som har tider
-                let solves = [];
-                for (let key in data) {
-                    if (key.startsWith('session') && Array.isArray(data[key])) {
-                        solves = data[key];
-                        break; 
+    <script>
+        let solveChart;
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    // Logikk for å finne 3x3 tider (vanligvis session1 i csTimer)
+                    const session1 = data.session1 || [];
+                    const times = session1.map(s => s[0][1] / 1000).filter(t => t > 0);
+                    
+                    if (times.length > 0) {
+                        updateUI(times);
                     }
+                } catch (err) {
+                    alert("Kunne ikke lese csTimer-filen.");
                 }
-                processSolves(solves);
-            } catch (err) {
-                alert("Kunne ikke lese filen. Er du sikker på at det er en csTimer-export?");
+            };
+            reader.readAsText(file);
+        });
+
+        function updateUI(times) {
+            // Oppdater PB Single
+            const pb = Math.min(...times).toFixed(2);
+            document.getElementById('333-single').innerText = pb + "s";
+
+            // Oppdater Ao5 (Veldig forenklet snitt av siste 5)
+            if (times.length >= 5) {
+                const last5 = times.slice(-5);
+                const avg = (last5.reduce((a, b) => a + b) / 5).toFixed(2);
+                document.getElementById('333-ao5').innerText = avg + "s";
             }
-        };
-        reader.readAsText(file);
-    });
 
-    function processSolves(rawSolves) {
-        // Konverterer csTimer-format [[0, [tid_i_ms, "scramble"]], ...] til rene sekunder
-        let times = rawSolves.map(s => s[0][1] / 1000).filter(t => t > 0);
-        
-        if (times.length === 0) return;
-
-        // Oppdater tekst-stats
-        document.getElementById('pb-single').innerText = Math.min(...times).toFixed(2) + "s";
-        document.getElementById('total-solves').innerText = times.length;
-        
-        const last5 = times.slice(-5);
-        if (last5.length === 5) {
-            const avg = last5.reduce((a, b) => a + b) / 5;
-            document.getElementById('curr-ao5').innerText = avg.toFixed(2) + "s";
+            renderChart(times.slice(-50));
         }
 
-        updateChart(times);
-    }
+        function renderChart(data) {
+            const ctx = document.getElementById('solveChart').getContext('2d');
+            if (solveChart) solveChart.destroy();
 
-    function updateChart(times) {
-        const ctx = document.getElementById('solveChart').getContext('2d');
-        const labels = times.map((_, i) => i + 1);
-
-        if (solveChart) solveChart.destroy();
-
-        solveChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Solve Time (s)',
-                    data: times,
-                    borderColor: '#00ff88',
-                    tension: 0.2,
-                    fill: false
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: false }
+            solveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i + 1),
+                    datasets: [{
+                        label: 'Tid (sekunder)',
+                        data: data,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#333' } }, x: { grid: { display: false } } }
                 }
-            }
-        });
-    }
-</script>
-
+            });
+        }
+    </script>
 </body>
 </html>
