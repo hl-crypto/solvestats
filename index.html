@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolveStats | Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
         :root {
             --bg: #0b0e11;
@@ -18,212 +17,167 @@
             --success: #2ecc71;
         }
 
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* Sidebar */
         .sidebar { width: 240px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; }
         .sidebar h2 { color: var(--accent); margin-bottom: 30px; letter-spacing: 2px; font-weight: 800; }
-        .nav-item { padding: 12px 15px; color: var(--dim); text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 8px; margin-bottom: 8px; transition: 0.3s; }
-        .nav-item.active, .nav-item:hover { background: var(--card); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
         /* Main Content */
         .main-content { flex: 1; overflow-y: auto; padding: 40px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .import-btn { background: var(--accent); color: #fff; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: 700; border: none; transition: 0.2s; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); }
-        .import-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-        /* PB Grid (Brandon True Style) */
-        .pb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .pb-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
-        .pb-card:hover { border-color: var(--accent); transform: scale(1.02); }
-        .pb-card h3 { margin: 0; color: var(--dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
-        .pb-card .time { font-size: 2rem; font-weight: 800; margin: 15px 0; color: #fff; }
-        .pb-card .avg-list { font-size: 0.85rem; color: var(--dim); border-top: 1px solid var(--border); padding-top: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .pb-card .avg-list b { color: var(--success); }
-
-        /* Analytics Section */
-        .analytics-container { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-top: 20px; }
-        .chart-box { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--border); height: 450px; }
-        .history-box { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--border); height: 450px; overflow-y: auto; }
         
-        .history-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .history-table th { text-align: left; color: var(--dim); padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-        .history-table td { padding: 8px 0; border-bottom: 1px solid #252a31; }
-        
+        .import-btn { background: var(--accent); color: #fff; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: 700; border: none; transition: 0.2s; }
         input[type="file"] { display: none; }
-        #status-msg { margin-bottom: 25px; padding: 15px; border-radius: 10px; display: none; font-weight: 600; text-align: center; }
+
+        /* PB Grid */
+        .pb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .pb-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .pb-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .pb-card h3 { margin: 0; color: var(--dim); font-size: 0.8rem; text-transform: uppercase; }
+        .pb-card .time { font-size: 2rem; font-weight: 800; margin: 15px 0; color: #fff; }
+        .pb-card .avg-list { font-size: 0.85rem; color: var(--dim); border-top: 1px solid var(--border); padding-top: 10px; }
+
+        /* Chart */
+        .chart-box { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--border); height: 400px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <h2>SOLVESTATS</h2>
-        <a href="#" class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-table"></i> Practice Stats</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-trophy"></i> Records</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-history"></i> Full History</a>
+        <div style="color: var(--dim)">Dashboard</div>
     </div>
 
     <div class="main-content">
         <header>
             <div>
-                <h1 style="margin:0; font-size: 2.2rem;">My Dashboard</h1>
-                <p style="color:var(--dim); margin-top:5px;">Real-time cubing analytics & session tracking</p>
+                <h1>My Dashboard</h1>
+                <p style="color:var(--dim)">Statistikk hentet fra csTimer</p>
             </div>
-            <label for="fileInput" class="import-btn"><i class="fa-solid fa-file-import"></i> Import csTimer File</label>
+            <label for="fileInput" class="import-btn">Import csTimer File</label>
             <input type="file" id="fileInput" accept=".txt,.json">
         </header>
 
-        <div id="status-msg"></div>
-
         <div class="pb-grid" id="pb-grid">
-            <!-- Event cards load here -->
+            <!-- Kortene lages av JavaScript -->
         </div>
 
-        <div class="analytics-container">
-            <div class="chart-box">
-                <h3 id="chart-title" style="margin-top:0">Solve Progress</h3>
-                <div style="height: 350px;"><canvas id="solveChart"></canvas></div>
-            </div>
-            <div class="history-box">
-                <h3 style="margin-top:0">Session Solves</h3>
-                <table class="history-table" id="history-table">
-                    <thead><tr><th>#</th><th>Time</th><th>Trend</th></tr></thead>
-                    <tbody id="history-body"></tbody>
-                </table>
-            </div>
+        <div class="chart-box">
+            <h3 id="chart-title">Velg en kube for å se graf</h3>
+            <canvas id="solveChart"></canvas>
         </div>
     </div>
 
 <script>
+    // Liste over alle kuber vi støtter
     const eventMap = {
-        "333": "3x3", "222": "2x2", "444": "4x4", "555": "5x5", "666": "6x6", "777": "777",
-        "333oh": "3x3 OH", "333bf": "3x3 BLD", "minx": "Megaminx", "pyram": "Pyraminx",
-        "clock": "Clock", "skewb": "Skewb", "sq1": "Square-1"
+        "333": "3x3", "222": "2x2", "444": "4x4", "555": "5x5",
+        "333oh": "3x3 OH", "pyram": "Pyraminx", "minx": "Megaminx", "clock": "Clock"
     };
 
+    let allSolves = {}; // Lagrer tider per kube: { "333": [10.2, 9.5...], "444": [...] }
     let solveChart;
-    let allData = {};
 
+    // 1. Lag de tomme boksene på nettsiden
     function initGrid() {
         const grid = document.getElementById('pb-grid');
         grid.innerHTML = '';
-        Object.keys(eventMap).forEach(key => {
+        Object.keys(eventMap).forEach(id => {
             grid.innerHTML += `
-                <div class="pb-card" id="card-${key}" onclick="showEventDetails('${key}')">
-                    <h3>${eventMap[key]}</h3>
-                    <div class="time" id="${key}-single">--.--</div>
-                    <div class="avg-list">
-                        <div>PB Ao5: <b id="${key}-ao5">--.--</b></div>
-                        <div>PB Ao12: <b id="${key}-ao12">--.--</b></div>
-                        <div>PB Ao100: <b id="${key}-ao100">--.--</b></div>
-                    </div>
+                <div class="pb-card" onclick="showGraph('${id}')">
+                    <h3>${eventMap[id]}</h3>
+                    <div class="time" id="pb-${id}">--.--</div>
+                    <div class="avg-list">Ao5: <b id="ao5-${id}">--.--</b></div>
                 </div>`;
         });
     }
     initGrid();
 
+    // 2. Lytt etter når brukeren velger en fil
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (!file) return;
         const reader = new FileReader();
         reader.onload = function(event) {
             try {
                 const data = JSON.parse(event.target.result);
-                allData = {};
-                
-                // Extract session metadata for Scramble Type sorting
-                let sessionMeta = {};
-                if (data.properties) {
-                    const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
-                    if (props.sessionData) sessionMeta = JSON.parse(props.sessionData);
-                }
-
-                Object.keys(data).forEach(key => {
-                    if (key.startsWith('session') && Array.isArray(data[key])) {
-                        const sId = key.replace('session', '');
-                        // Get scramble type from csTimer hidden metadata
-                        let scrType = (sessionMeta[sId] && sessionMeta[sId].opt) ? sessionMeta[sId].opt.scrType : "333";
-                        
-                        const solves = data[key].map(s => {
-                            try {
-                                let ms = (Array.isArray(s) && Array.isArray(s[0])) ? s[0][1] : 0;
-                                return ms > 0 ? ms / 1000 : null;
-                            } catch(e) { return null; }
-                        }).filter(t => t !== null);
-
-                        if (solves.length > 0 && eventMap[scrType]) {
-                            if (!allData[scrType]) allData[scrType] = [];
-                            allData[scrType] = allData[scrType].concat(solves);
-                        }
-                    }
-                });
-
-                updateDashboard();
-            } catch (err) { alert("Invalid csTimer file format."); }
+                processData(data);
+            } catch(err) { alert("Feil format på filen."); }
         };
         reader.readAsText(file);
     });
 
-    function calcAoX(times, x) {
-        if (times.length < x) return Infinity;
-        let best = Infinity;
-        for (let i = 0; i <= times.length - x; i++) {
-            const slice = [...times.slice(i, i + x)].sort((a, b) => a - b);
-            // Drop fastest and slowest 5% (rounded to 1 for small AoX)
-            const drop = Math.ceil(x * 0.05);
-            const trimmed = slice.slice(drop, x - drop);
-            const avg = trimmed.reduce((a, b) => a + b) / trimmed.length;
-            if (avg < best) best = avg;
+    // 3. Sorter tidene fra csTimer inn i de riktige boksene
+    function processData(data) {
+        // Finn ut hvilken kube som er i hvilken session
+        let sessionMeta = {};
+        if (data.properties && data.properties.sessionData) {
+            sessionMeta = JSON.parse(data.properties.sessionData);
         }
-        return best;
-    }
 
-    function updateDashboard() {
-        const status = document.getElementById('status-msg');
-        status.style.display = "block";
-        status.style.background = "rgba(46, 204, 113, 0.15)";
-        status.style.color = var(--success);
-        status.innerText = "All sessions imported successfully!";
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('session')) {
+                const sId = key.replace('session', '');
+                const scrType = sessionMeta[sId] ? sessionMeta[sId].opt.scrType : "333";
+                
+                if (eventMap[scrType]) {
+                    // Hent alle tider i denne sesjonen (csTimer lagrer dem som [ [0, [ms, "scramble"]], ... ])
+                    const rawSolves = data[key];
+                    const times = rawSolves.map(s => {
+                        // Noen ganger er formatet annerledes, vi sjekker begge deler:
+                        if (Array.isArray(s[0])) return s[0][1] / 1000;
+                        return s[0] / 1000;
+                    }).filter(t => t > 0);
 
-        Object.keys(allData).forEach(key => {
-            const t = allData[key];
-            document.getElementById(key + '-single').innerText = Math.min(...t).toFixed(2) + "s";
-            
-            const ao5 = calcAoX(t, 5);
-            const ao12 = calcAoX(t, 12);
-            const ao100 = calcAoX(t, 100);
-
-            if (ao5 !== Infinity) document.getElementById(key + '-ao5').innerText = ao5.toFixed(2) + "s";
-            if (ao12 !== Infinity) document.getElementById(key + '-ao12').innerText = ao12.toFixed(2) + "s";
-            if (ao100 !== Infinity) document.getElementById(key + '-ao100').innerText = ao100.toFixed(2) + "s";
+                    if (times.length > 0) {
+                        if (!allSolves[scrType]) allSolves[scrType] = [];
+                        allSolves[scrType] = allSolves[scrType].concat(times);
+                        updateCard(scrType);
+                    }
+                }
+            }
         });
-        if (allData["333"]) showEventDetails("333");
     }
 
-    function showEventDetails(key) {
-        const times = allData[key];
-        if (!times) return;
+    // 4. Oppdater tallene på kortene
+    function updateCard(id) {
+        const times = allSolves[id];
+        const pb = Math.min(...times).toFixed(2);
+        document.getElementById(`pb-${id}`).innerText = pb + "s";
+        
+        if (times.length >= 5) {
+            const last5 = times.slice(-5).sort((a,b) => a-b).slice(1,4);
+            const ao5 = (last5.reduce((a,b) => a+b) / 3).toFixed(2);
+            document.getElementById(`ao5-${id}`).innerText = ao5;
+        }
+    }
 
-        // Update Chart
-        document.getElementById('chart-title').innerText = "Progress: " + eventMap[key];
+    // 5. Tegn grafen for den kuben man trykker på
+    function showGraph(id) {
+        if (!allSolves[id]) return;
+        document.getElementById('chart-title').innerText = eventMap[id] + " Progress";
+        
         const ctx = document.getElementById('solveChart').getContext('2d');
         if (solveChart) solveChart.destroy();
+
         solveChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: times.map((_, i) => i + 1),
-                datasets: [{ label: 'Time', data: times, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, pointRadius: 0, tension: 0.1 }]
+                labels: allSolves[id].map((_, i) => i + 1),
+                datasets: [{
+                    label: 'Seconds',
+                    data: allSolves[id],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
-        });
-
-        // Update History Table
-        const tbody = document.getElementById('history-body');
-        tbody.innerHTML = '';
-        times.slice(-50).reverse().forEach((t, i) => {
-            const row = `<tr><td>${times.length - i}</td><td><b>${t.toFixed(2)}s</b></td><td><i class="fa-solid fa-minus" style="color:var(--dim)"></i></td></tr>`;
-            tbody.innerHTML += row;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: false } }
+            }
         });
     }
 </script>
