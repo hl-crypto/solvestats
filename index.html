@@ -1,10 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="no">
 <head>
-    <title>SolveStats</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveStats - Cubing Dashboard</title>
+    <script src="https://cdn.jsdelivr.net"></script>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 15px; }
+        h1 { color: #00ff88; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .stat-card { background: #2a2a2a; padding: 15px; border-radius: 10px; border: 1px solid #333; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: #00ff88; }
+        input[type="file"] { margin: 20px 0; padding: 10px; color: white; }
+        canvas { background: #2a2a2a; border-radius: 10px; margin-top: 20px; padding: 10px; }
+    </style>
 </head>
 <body>
-    <h1>Velkommen til SolveStats</h1>
-    <p>Dette er min cubing stats side 🔥</p>
+
+<div class="container">
+    <h1>SolveStats</h1>
+    <p>Last opp din <b>csTimer</b> export-fil (.txt eller .json) for å se statistikk.</p>
+    
+    <input type="file" id="fileInput" accept=".txt,.json">
+
+    <div class="stats-grid">
+        <div class="stat-card"><div>Best Single</div><div class="stat-value" id="pb-single">-</div></div>
+        <div class="stat-card"><div>Current Ao5</div><div class="stat-value" id="curr-ao5">-</div></div>
+        <div class="stat-card"><div>Total Solves</div><div class="stat-value" id="total-solves">-</div></div>
+    </div>
+
+    <canvas id="solveChart" width="400" height="200"></canvas>
+</div>
+
+<script>
+    let solveChart;
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                // csTimer lagrer tider i 'session1', 'session2' osv.
+                // Vi henter den første sessionen som har tider
+                let solves = [];
+                for (let key in data) {
+                    if (key.startsWith('session') && Array.isArray(data[key])) {
+                        solves = data[key];
+                        break; 
+                    }
+                }
+                processSolves(solves);
+            } catch (err) {
+                alert("Kunne ikke lese filen. Er du sikker på at det er en csTimer-export?");
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    function processSolves(rawSolves) {
+        // Konverterer csTimer-format [[0, [tid_i_ms, "scramble"]], ...] til rene sekunder
+        let times = rawSolves.map(s => s[0][1] / 1000).filter(t => t > 0);
+        
+        if (times.length === 0) return;
+
+        // Oppdater tekst-stats
+        document.getElementById('pb-single').innerText = Math.min(...times).toFixed(2) + "s";
+        document.getElementById('total-solves').innerText = times.length;
+        
+        const last5 = times.slice(-5);
+        if (last5.length === 5) {
+            const avg = last5.reduce((a, b) => a + b) / 5;
+            document.getElementById('curr-ao5').innerText = avg.toFixed(2) + "s";
+        }
+
+        updateChart(times);
+    }
+
+    function updateChart(times) {
+        const ctx = document.getElementById('solveChart').getContext('2d');
+        const labels = times.map((_, i) => i + 1);
+
+        if (solveChart) solveChart.destroy();
+
+        solveChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Solve Time (s)',
+                    data: times,
+                    borderColor: '#00ff88',
+                    tension: 0.2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+    }
+</script>
+
 </body>
 </html>
