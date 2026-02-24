@@ -1,3 +1,141 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveStats | My Cubing Dashboard</title>
+    <script src="https://cdn.jsdelivr.net"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
+    <style>
+        :root {
+            --bg-dark: #0f0f0f;
+            --sidebar-bg: #161616;
+            --card-bg: #1e1e1e;
+            --accent: #3498db;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+            --success: #2ecc71;
+            --border: #333;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+        }
+
+        .sidebar h2 { color: var(--accent); font-size: 1.4rem; margin-bottom: 40px; letter-spacing: 1px; }
+        
+        .nav-item {
+            padding: 12px 15px;
+            color: var(--text-dim);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active { background: var(--card-bg); color: white; }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .import-btn {
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+        }
+
+        .pb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .pb-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .pb-card:hover { border-color: var(--accent); background: #252525; }
+        .pb-card h3 { margin: 0; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
+        .pb-card .time { font-size: 1.6rem; font-weight: 700; margin: 10px 0; color: #fff; }
+        .pb-card .avg-info { font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 8px; }
+
+        .chart-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border: 1px solid var(--border);
+        }
+
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>SOLVESTATS</h2>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-stopwatch"></i> Sessions</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-chart-simple"></i> Analytics</a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <div>
+                <h1 style="margin:0">PB Dashboard</h1>
+                <p style="color:var(--text-dim); margin-top:5px;">Oversikt over alle øvelser</p>
+            </div>
+            <label for="fileInput" class="import-btn">
+                <i class="fa-solid fa-upload"></i> Import csTimer
+            </label>
+            <input type="file" id="fileInput" accept=".txt,.json">
+        </header>
+
+        <div class="pb-grid" id="pb-grid">
+            <!-- Kortene genereres av JavaScript under -->
+        </div>
+
+        <div class="chart-container">
+            <h3 id="chart-title">Last opp fil for å se graf</h3>
+            <canvas id="solveChart" height="100"></canvas>
+        </div>
+    </div>
+
 <script>
     const events = {
         "333": "3x3", "222": "2x2", "444": "4x4", "555": "5x5", "666": "6x6", "777": "777",
@@ -8,10 +146,11 @@
     let solveChart;
     let allData = {};
 
+    // Lag alle kortene med en gang siden laster
     const grid = document.getElementById('pb-grid');
     Object.keys(events).forEach(key => {
         grid.innerHTML += `
-            <div class="pb-card" onclick="showGraph('${key}')" style="cursor:pointer">
+            <div class="pb-card" onclick="showGraph('${key}')">
                 <h3>${events[key]}</h3>
                 <div class="time" id="${key}-single">--.--</div>
                 <div class="avg-info">PB Ao5: <span id="${key}-ao5">--.--</span></div>
@@ -27,41 +166,43 @@
         reader.onload = function(event) {
             try {
                 const data = JSON.parse(event.target.result);
-                allData = {}; // Nullstill gammel data
+                allData = {}; 
 
-                // Finn session-data (kan ligge direkte eller under 'properties')
+                // Hent session-info fra csTimer-formatet
                 let sessionMeta = {};
                 if (data.properties) {
                     const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
                     sessionMeta = JSON.parse(props.sessionData || "{}");
                 }
 
-                // Gå gjennom alle sessions i filen
+                // Gå gjennom hver session i JSON-filen
                 Object.keys(data).forEach(key => {
-                    if (key.startsWith('session')) {
+                    if (key.startsWith('session') && Array.isArray(data[key])) {
                         const sessionId = key.replace('session', '');
                         const scrambleType = sessionMeta[sessionId] ? sessionMeta[sessionId].opt.scrType : "333";
                         
-                        // Hent ut tider fra csTimer-format: [ [ [tid_i_ms, ...], ... ] ]
-                        const sessionSolves = data[key];
-                        if (Array.isArray(sessionSolves)) {
-                            const times = sessionSolves
-                                .map(s => (Array.isArray(s) && s[0] ? s[0][0] / 1000 : null))
-                                .filter(t => t !== null && t > 0);
+                        // Konverter tider: csTimer lagrer tider som [ [ [tid_i_ms, ...], ... ] ]
+                        const times = data[key]
+                            .map(solve => {
+                                if (Array.isArray(solve) && solve[0]) {
+                                    return solve[0][1] / 1000; // Solve-tid i sekunder
+                                }
+                                return null;
+                            })
+                            .filter(t => t !== null && t > 0);
 
-                            if (times.length > 0) {
-                                const eventKey = events[scrambleType] ? scrambleType : "333";
-                                if (!allData[eventKey]) allData[eventKey] = [];
-                                allData[eventKey] = allData[eventKey].concat(times);
-                            }
+                        if (times.length > 0) {
+                            const eventKey = events[scrambleType] ? scrambleType : "333";
+                            if (!allData[eventKey]) allData[eventKey] = [];
+                            allData[eventKey] = allData[eventKey].concat(times);
                         }
                     }
                 });
 
                 updateDashboard();
             } catch (err) {
-                console.error("Feil ved lesing:", err);
-                alert("Kunne ikke lese filen. Sjekk at du har eksportert 'Server format' eller 'File' fra csTimer.");
+                console.error(err);
+                alert("Feil ved lesing av fil. Pass på at du bruker en gyldig csTimer-eksport.");
             }
         };
         reader.readAsText(file);
@@ -72,13 +213,16 @@
             const times = allData[key];
             if (times.length === 0) return;
 
+            // Oppdater Beste Single
             const single = Math.min(...times).toFixed(2);
             document.getElementById(`${key}-single`).innerText = single + "s";
 
+            // Finn Beste Ao5 i denne øvelsen
             let bestAo5 = Infinity;
             for (let i = 0; i <= times.length - 5; i++) {
-                const current5 = times.slice(i, i + 5).sort((a, b) => a - b);
-                const ao5 = (current5[1] + current5[2] + current5[3]) / 3; // Fjerner best og dårligst
+                const slice = times.slice(i, i + 5);
+                const sorted = [...slice].sort((a, b) => a - b);
+                const ao5 = (sorted[1] + sorted[2] + sorted[3]) / 3; // Fjern min og maks
                 if (ao5 < bestAo5) bestAo5 = ao5;
             }
             
@@ -86,12 +230,17 @@
                 document.getElementById(`${key}-ao5`).innerText = bestAo5.toFixed(2) + "s";
             }
         });
+        
+        // Vis graf for 3x3 som standard hvis den finnes
         if (allData["333"]) showGraph("333");
     }
 
     function showGraph(key) {
         const times = allData[key];
-        if (!times) return;
+        if (!times || times.length === 0) {
+            alert("Ingen tider funnet for denne øvelsen.");
+            return;
+        }
 
         document.getElementById('chart-title').innerText = `Fremgang: ${events[key]}`;
         const ctx = document.getElementById('solveChart').getContext('2d');
@@ -115,10 +264,13 @@
             options: {
                 responsive: true,
                 scales: {
-                    y: { grid: { color: '#333' } },
+                    y: { grid: { color: '#333' }, ticks: { color: '#888' } },
                     x: { display: false }
-                }
+                },
+                plugins: { legend: { display: false } }
             }
         });
     }
 </script>
+</body>
+</html>
