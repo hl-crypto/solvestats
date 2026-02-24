@@ -21,9 +21,10 @@
         .pb-card h3 { margin: 0; color: var(--dim); font-size: 0.75rem; text-transform: uppercase; }
         .pb-card .time { font-size: 1.6rem; font-weight: 700; margin: 10px 0; color: #fff; }
         .pb-card .avg-info { font-size: 0.75rem; color: var(--dim); border-top: 1px solid var(--border); padding-top: 8px; }
-        .chart-container { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); min-height: 300px; }
+        .chart-container { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); height: 350px; position: relative; }
         input[type="file"] { display: none; }
         #status-msg { margin-bottom: 20px; font-weight: bold; padding: 15px; border-radius: 8px; display: none; border: 1px solid transparent; }
+        canvas { width: 100% !important; height: 100% !important; }
     </style>
 </head>
 <body>
@@ -49,8 +50,8 @@
         <div class="pb-grid" id="pb-grid"></div>
 
         <div class="chart-container">
-            <h3 id="chart-title" style="margin-top:0">Last opp fil for å se graf</h3>
-            <div style="height: 250px;"><canvas id="solveChart"></canvas></div>
+            <h3 id="chart-title" style="margin-top:0">Klikk på et kort over for å se graf</h3>
+            <canvas id="solveChart"></canvas>
         </div>
     </div>
 
@@ -68,7 +69,7 @@
         const grid = document.getElementById('pb-grid');
         grid.innerHTML = '';
         Object.keys(eventMap).forEach(key => {
-            grid.innerHTML += `<div class="pb-card" onclick="showGraph('${key}')"><h3>${eventMap[key]}</h3><div class="time" id="${key}-single">--.--</div><div class="avg-info">Best Ao5: <span id="${key}-ao5">--.--</span></div></div>`;
+            grid.innerHTML += `<div class="pb-card" id="card-${key}" onclick="showGraph('${key}')"><h3>${eventMap[key]}</h3><div class="time" id="${key}-single">--.--</div><div class="avg-info">Best Ao5: <span id="${key}-ao5">--.--</span></div></div>`;
         });
     }
     initGrid();
@@ -83,34 +84,26 @@
                 const data = JSON.parse(event.target.result);
                 allData = {};
                 
-                // Hent ut sessionData fra properties (Dette er nøkkelen til å vite hvilken øvelse det er!)
                 let sessionMeta = {};
                 if (data.properties) {
                     const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
-                    if (props.sessionData) {
-                        sessionMeta = JSON.parse(props.sessionData);
-                    }
+                    if (props.sessionData) sessionMeta = JSON.parse(props.sessionData);
                 }
 
-                // Gå gjennom alle sessions i JSON-filen
                 Object.keys(data).forEach(key => {
                     if (key.startsWith('session') && Array.isArray(data[key])) {
                         const sId = key.replace('session', '');
                         
-                        // Finn ut hvilken scramble-type denne sessionen har
-                        let scrType = "333"; // Standard hvis vi ikke finner noe
-                        if (sessionMeta[sId] && sessionMeta[sId].opt && sessionMeta[sId].opt.scrType) {
-                            scrType = sessionMeta[sId].opt.scrType;
-                        }
-
+                        // Smart gjenkjenning: Sjekk scrType eller bruk 333 som backup
+                        let scrType = (sessionMeta[sId] && sessionMeta[sId].opt) ? sessionMeta[sId].opt.scrType : "333";
+                        
                         const times = data[key].map(item => {
-                            // csTimer format: [ [status, tid_i_ms], scramble, dato, kommentar ]
                             if (Array.isArray(item) && Array.isArray(item[0])) {
                                 let ms = item[0][1]; 
                                 return (ms > 0) ? ms / 1000 : null;
                             }
                             return null;
-                        }).filter(t => t !== null && t > 0);
+                        }).filter(t => t !== null);
 
                         if (times.length > 0 && eventMap[scrType]) {
                             if (!allData[scrType]) allData[scrType] = [];
@@ -119,61 +112,70 @@
                     }
                 });
 
-                updateDashboardUI();
+                updateUI();
             } catch (err) {
-                alert("Feil ved lesing av fil. Pass på at det er en Export-fil fra csTimer.");
-                console.error(err);
+                alert("Kunne ikke lese filen.");
             }
         };
         reader.readAsText(file);
     });
 
-    function updateDashboardUI() {
+    function updateUI() {
         const count = Object.keys(allData).length;
         const status = document.getElementById('status-msg');
         status.style.display = "block";
-        
-        if (count > 0) {
-            status.style.background = "rgba(46, 204, 113, 0.2)";
-            status.style.color = "#2ecc71";
-            status.style.border = "1px solid #2ecc71";
-            status.innerText = "Suksess! Lastet inn tider for " + count + " øvelser.";
+        status.style.background = "rgba(46, 204, 113, 0.2)";
+        status.style.color = "#2ecc71";
+        status.innerText = "Suksess! Lastet inn " + count + " øvelser.";
 
-            Object.keys(allData).forEach(key => {
-                const times = allData[key];
-                const single = Math.min(...times).toFixed(2);
-                document.getElementById(key + '-single').innerText = single + "s";
-                
-                let bestAo5 = Infinity;
-                for (let i = 0; i <= times.length - 5; i++) {
-                    const slice = [...times.slice(i, i + 5)].sort((a, b) => a - b);
-                    const ao5 = (slice[1] + slice[2] + slice[3]) / 3;
-                    if (ao5 < bestAo5) bestAo5 = ao5;
-                }
-                if (bestAo5 !== Infinity) document.getElementById(key + '-ao5').innerText = bestAo5.toFixed(2) + "s";
-            });
-            if (allData["333"]) showGraph("333");
-        } else {
-            status.style.background = "rgba(231, 76, 60, 0.2)";
-            status.style.color = "#e74c3c";
-            status.style.border = "1px solid #e74c3c";
-            status.innerText = "Fant ingen tider. Prøv Export -> File i csTimer.";
-        }
+        Object.keys(allData).forEach(key => {
+            const times = allData[key];
+            document.getElementById(key + '-single').innerText = Math.min(...times).toFixed(2) + "s";
+            
+            let bestAo5 = Infinity;
+            for (let i = 0; i <= times.length - 5; i++) {
+                const slice = [...times.slice(i, i + 5)].sort((a, b) => a - b);
+                const ao5 = (slice[1] + slice[2] + slice[3]) / 3;
+                if (ao5 < bestAo5) bestAo5 = ao5;
+            }
+            if (bestAo5 !== Infinity) document.getElementById(key + '-ao5').innerText = bestAo5.toFixed(2) + "s";
+        });
+        
+        // Autovis graf for 3x3 hvis den finnes
+        if (allData["333"]) showGraph("333");
     }
 
     function showGraph(key) {
         const times = allData[key];
         if (!times) return;
+
         document.getElementById('chart-title').innerText = "Fremgang: " + eventMap[key];
         const ctx = document.getElementById('solveChart').getContext('2d');
+        
         if (solveChart) solveChart.destroy();
+
         solveChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: times.map((_, i) => i + 1),
-                datasets: [{ label: 'Tid (s)', data: times, borderColor: '#3498db', fill: true, backgroundColor: 'rgba(52, 152, 219, 0.1)', tension: 0.1 }]
+                datasets: [{
+                    label: 'Tid (s)',
+                    data: times,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: true, grid: { display: false }, ticks: { color: '#666' } },
+                    y: { grid: { color: '#333' }, ticks: { color: '#666' } }
+                }
+            }
         });
     }
 </script>
