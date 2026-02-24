@@ -24,7 +24,7 @@
         .pb-card .avg-info { font-size: 0.75rem; color: var(--dim); border-top: 1px solid var(--border); padding-top: 8px; }
         .chart-container { background: var(--card); padding: 20px; border-radius: 12px; margin-top: 30px; border: 1px solid var(--border); height: 350px; }
         input[type="file"] { display: none; }
-        #status-msg { margin-bottom: 20px; font-weight: bold; padding: 10px; border-radius: 5px; display: none; }
+        #status-msg { margin-bottom: 20px; font-weight: bold; padding: 15px; border-radius: 8px; display: none; border: 1px solid transparent; }
     </style>
 </head>
 <body>
@@ -40,7 +40,7 @@
         <header>
             <div>
                 <h1 style="margin:0">PB Dashboard</h1>
-                <p style="color:var(--dim); margin-top:5px;">Ekte csTimer-import</p>
+                <p style="color:var(--dim); margin-top:5px;">Universal csTimer-import</p>
             </div>
             <label for="fileInput" class="import-btn"><i class="fa-solid fa-upload"></i> Last opp csTimer-fil</label>
             <input type="file" id="fileInput" accept=".txt,.json">
@@ -82,7 +82,7 @@
     initGrid();
 
     document.getElementById('fileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
+        const file = e.target.files;
         if (!file) return;
 
         const reader = new FileReader();
@@ -91,24 +91,24 @@
                 const data = JSON.parse(event.target.result);
                 allData = {};
                 
-                // Hent ut session-informasjon
                 let sessionMeta = {};
                 if (data.properties) {
                     const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
                     if (props.sessionData) sessionMeta = JSON.parse(props.sessionData);
                 }
 
-                // Gå gjennom hver session (session1, session2...)
                 Object.keys(data).forEach(key => {
                     if (key.startsWith('session') && Array.isArray(data[key])) {
                         const sId = key.replace('session', '');
                         const scrType = sessionMeta[sId] ? sessionMeta[sId].opt.scrType : "333";
                         
-                        // EKTE csTimer-DYBDE: s[0][0] er der millisekundene bor
                         const times = data[key].map(s => {
-                            if (Array.isArray(s) && Array.isArray(s[0])) {
-                                let ms = s[0][0]; 
-                                return ms > 0 ? ms / 1000 : null;
+                            // Ny "universal" sjekk for tid
+                            if (Array.isArray(s) && Array.isArray(s)) {
+                                let val = s;
+                                return (typeof val === 'number' && val > 0) ? val / 1000 : null;
+                            } else if (typeof s === 'number' && s > 0) {
+                                return s / 1000;
                             }
                             return null;
                         }).filter(t => t !== null);
@@ -120,42 +120,43 @@
                     }
                 });
 
-                const count = Object.keys(allData).length;
-                const status = document.getElementById('status-msg');
-                status.style.display = "block";
-                
-                if (count > 0) {
-                    status.style.background = "#2ecc7133";
-                    status.style.color = "#2ecc71";
-                    status.innerText = "Suksess! Lastet inn tider for " + count + " øvelser.";
-                    updateUI();
-                } else {
-                    status.style.background = "#e74c3c33";
-                    status.style.color = "#e74c3c";
-                    status.innerText = "Fant ingen tider. Er du sikker på at dette er en Export-fil fra csTimer?";
-                }
+                showStatus(Object.keys(allData).length > 0);
             } catch (err) {
-                alert("Kunne ikke lese filen. Sjekk at det er en .txt fil fra csTimer.");
+                showStatus(false, "Kritisk feil: Filen er ikke en gyldig csTimer-fil.");
             }
         };
         reader.readAsText(file);
     });
 
+    function showStatus(success, msg) {
+        const status = document.getElementById('status-msg');
+        status.style.display = "block";
+        if (success) {
+            status.style.background = "rgba(46, 204, 113, 0.2)";
+            status.style.color = "#2ecc71";
+            status.style.border = "1px solid #2ecc71";
+            status.innerText = "Suksess! Dine tider er nå lastet inn.";
+            updateUI();
+        } else {
+            status.style.background = "rgba(231, 76, 60, 0.2)";
+            status.style.color = "#e74c3c";
+            status.style.border = "1px solid #e74c3c";
+            status.innerText = msg || "Ingen tider funnet. Sjekk at du valgte 'Export to File' i csTimer.";
+        }
+    }
+
     function updateUI() {
         Object.keys(allData).forEach(key => {
             const times = allData[key];
-            const single = Math.min(...times).toFixed(2);
-            document.getElementById(key + '-single').innerText = single + "s";
+            document.getElementById(key + '-single').innerText = Math.min(...times).toFixed(2) + "s";
 
             let bestAo5 = Infinity;
             for (let i = 0; i <= times.length - 5; i++) {
                 const slice = [...times.slice(i, i + 5)].sort((a, b) => a - b);
-                const ao5 = (slice[1] + slice[2] + slice[3]) / 3;
+                const ao5 = (slice + slice + slice) / 3;
                 if (ao5 < bestAo5) bestAo5 = ao5;
             }
-            if (bestAo5 !== Infinity) {
-                document.getElementById(key + '-ao5').innerText = bestAo5.toFixed(2) + "s";
-            }
+            if (bestAo5 !== Infinity) document.getElementById(key + '-ao5').innerText = bestAo5.toFixed(2) + "s";
         });
         if (allData["333"]) showGraph("333");
     }
@@ -171,13 +172,7 @@
             data: {
                 labels: times.map((_, i) => i + 1),
                 datasets: [{
-                    label: 'Sekunder',
-                    data: times,
-                    borderColor: '#3498db',
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                    fill: true,
-                    pointRadius: 1,
-                    tension: 0.1
+                    label: 'Sekunder', data: times, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, pointRadius: 1, tension: 0.1
                 }]
             },
             options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
