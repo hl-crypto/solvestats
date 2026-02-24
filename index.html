@@ -7,100 +7,46 @@
     <script src="https://cdn.jsdelivr.net"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
-        :root {
-            --bg: #0b0e11;
-            --sidebar: #151921;
-            --card: #1c2128;
-            --accent: #3498db;
-            --text: #f0f6fc;
-            --dim: #8b949e;
-            --border: #30363d;
-            --success: #2ecc71;
-        }
-
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
+        :root { --bg: #0b0e11; --sidebar: #151921; --card: #1c2128; --accent: #3498db; --text: #f0f6fc; --dim: #8b949e; --border: #30363d; --success: #2ecc71; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; }
         .sidebar h2 { color: var(--accent); margin-bottom: 30px; letter-spacing: 2px; font-weight: 800; }
-        .nav-item { padding: 12px 15px; color: var(--dim); text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 8px; margin-bottom: 8px; transition: 0.3s; }
-        .nav-item.active, .nav-item:hover { background: var(--card); color: #fff; }
-
-        /* Main Content */
         .main-content { flex: 1; overflow-y: auto; padding: 40px; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
         .import-btn { background: var(--accent); color: #fff; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: 700; border: none; }
-
-        /* Streak Section */
-        .streak-container { display: flex; gap: 20px; margin-bottom: 30px; }
-        .streak-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); flex: 1; }
-        .streak-val { font-size: 2rem; font-weight: 800; color: #fff; }
-
-        /* PB Grid */
+        .streak-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); flex: 1; margin-bottom: 30px; }
         .pb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px; }
         .pb-card { background: var(--card); padding: 22px; border-radius: 14px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
         .pb-card:hover { border-color: var(--accent); transform: translateY(-5px); }
-        .pb-card h3 { margin: 0; color: var(--dim); font-size: 0.85rem; text-transform: uppercase; }
-        .pb-card .time { font-size: 2.2rem; font-weight: 800; margin: 12px 0; color: #fff; }
-        .pb-card .date-label { font-size: 0.75rem; color: var(--dim); margin-bottom: 10px; }
-
-        /* Chart & History */
-        .analytics-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
-        .chart-box, .history-box { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--border); height: 400px; }
-        
+        .time { font-size: 2.2rem; font-weight: 800; margin: 12px 0; color: #fff; }
         input[type="file"] { display: none; }
-        #status-msg { background: rgba(46, 204, 113, 0.2); color: var(--success); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: none; text-align: center; }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
         <h2>SOLVESTATS</h2>
-        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Dashboard</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-chart-simple"></i> Practice Stats</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-history"></i> Full History</a>
-        <div style="margin-top:auto">
-            <div class="nav-item" style="cursor:pointer" id="loginBtn">
-                <i class="fa-brands fa-google"></i> Login with Google
-            </div>
+        <div style="margin-top:auto; color:var(--dim); font-size:0.9rem;">
+            <i class="fa-brands fa-google"></i> Login with Google
         </div>
     </div>
-
     <div class="main-content">
-        <header>
-            <div>
-                <h1 style="margin:0;">Cube Analytics</h1>
-                <p style="color:var(--dim);">Tracking your progress, one solve at a time.</p>
-            </div>
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+            <h1 style="margin:0;">Cube Analytics</h1>
             <label for="fileInput" class="import-btn">Import csTimer</label>
             <input type="file" id="fileInput" accept=".txt,.json">
         </header>
 
-        <div id="status-msg">Import vellykket! Analyserer scrambles...</div>
-
-        <div class="streak-container">
+        <div style="display:flex; gap:20px;">
             <div class="streak-card">
                 <small style="color:var(--dim)">CURRENT PRACTICE STREAK</small>
-                <div class="streak-val" id="curr-streak">0 Days</div>
+                <div style="font-size:2rem; font-weight:800;" id="curr-streak">0 Days</div>
             </div>
             <div class="streak-card">
                 <small style="color:var(--dim)">BEST STREAK RECORD</small>
-                <div class="streak-val" id="best-streak">5 Days</div>
+                <div style="font-size:2rem; font-weight:800;">5 Days</div>
             </div>
         </div>
 
         <div class="pb-grid" id="pb-grid"></div>
-
-        <div class="analytics-grid">
-            <div class="chart-box">
-                <h3 id="chart-title" style="margin-top:0">Session Progress</h3>
-                <canvas id="mainChart"></canvas>
-            </div>
-            <div class="history-box" style="overflow-y:auto">
-                <h3 style="margin-top:0">Recent Solves</h3>
-                <div id="solve-list"></div>
-            </div>
-        </div>
     </div>
 
 <script>
@@ -111,119 +57,65 @@
     };
 
     let allSolves = {};
-    let activeChart;
 
-    // 1. Initialiser rutenettet
     function init() {
         const grid = document.getElementById('pb-grid');
         grid.innerHTML = '';
         Object.keys(eventMap).forEach(key => {
-            grid.innerHTML += `
-                <div class="pb-card" onclick="showDetails('${key}')">
-                    <h3>${eventMap[key]}</h3>
-                    <div class="time" id="pb-${key}">--.--</div>
-                    <div class="date-label" id="date-${key}">No records yet</div>
-                    <div style="font-size:0.85rem">Ao5: <b id="ao5-${key}">-</b> | Ao12: <b id="ao12-${key}">-</b></div>
-                </div>`;
+            grid.innerHTML += `<div class="pb-card">
+                <h3 style="margin:0; color:var(--dim); font-size:0.8rem; text-transform:uppercase;">${eventMap[key]}</h3>
+                <div class="time" id="pb-${key}">--.--</div>
+                <div id="date-${key}" style="font-size:0.75rem; color:var(--dim)">No records yet</div>
+            </div>`;
         });
     }
     init();
 
-    // 2. Import-logikk (Den mest robuste versjonen)
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = function(event) {
             try {
                 const data = JSON.parse(event.target.result);
-                
-                // Hent session metadata
                 let sessionMeta = {};
-                if (data.properties) {
-                    const props = typeof data.properties === 'string' ? JSON.parse(data.properties) : data.properties;
-                    if (props.sessionData) sessionMeta = JSON.parse(props.sessionData);
+                if (data.properties && data.properties.sessionData) {
+                    sessionMeta = JSON.parse(data.properties.sessionData);
                 }
 
-                // Prosesser hver session
                 Object.keys(data).forEach(key => {
                     if (key.startsWith('session')) {
                         const sId = key.replace('session', '');
                         const scrType = (sessionMeta[sId] && sessionMeta[sId].opt) ? sessionMeta[sId].opt.scrType : "333";
                         
                         const processed = data[key].map(s => {
-                            try {
-                                // csTimer format: [ [penalty, ms], scramble, comment, timestamp ]
-                                // Vi graver oss ned til [0][1] for ms
-                                let ms = 0;
-                                if (Array.isArray(s) && Array.isArray(s[0])) ms = s[0][1];
-                                else if (Array.isArray(s)) ms = s[0];
-                                
-                                let ts = (s && s[3]) ? s[3] * 1000 : Date.now();
-                                return ms > 0 ? { t: ms / 1000, d: ts } : null;
-                            } catch(e) { return null; }
-                        }).filter(x => x !== null);
+                            // csTimer format dyp-dykk: s[0][1] er millisekunder
+                            if (Array.isArray(s) && Array.isArray(s[0])) {
+                                return { t: s[0][1] / 1000, d: s[3] * 1000 };
+                            }
+                            return null;
+                        }).filter(x => x !== null && x.t > 0);
 
                         if (processed.length > 0 && eventMap[scrType]) {
                             if (!allSolves[scrType]) allSolves[scrType] = [];
                             allSolves[scrType] = allSolves[scrType].concat(processed);
-                            updateCard(scrType);
+                            updateUI(scrType);
                         }
                     }
                 });
-
-                document.getElementById('status-msg').style.display = 'block';
-                updateStreak();
-            } catch(err) { alert("Feil ved lesing av fil: " + err); }
+                calculateStreak();
+            } catch(err) { alert("Feil: " + err); }
         };
         reader.readAsText(file);
     });
 
-    function updateCard(id) {
+    function updateUI(id) {
         const list = allSolves[id];
         const pb = list.reduce((prev, curr) => (prev.t < curr.t) ? prev : curr);
-        
         document.getElementById(`pb-${id}`).innerText = pb.t.toFixed(2) + "s";
-        
-        // Regn ut "Time since"
-        const diff = Math.floor((Date.now() - pb.d) / (1000 * 60 * 60 * 24));
-        const dateLabel = diff === 0 ? "Sett i dag" : `Sett ${diff} dager siden`;
-        document.getElementById(`date-${id}`).innerText = dateLabel;
-
-        if (list.length >= 5) {
-            const ao5 = (list.slice(-5).map(s => s.t).sort((a,b)=>a-b).slice(1,4).reduce((a,b)=>a+b)/3).toFixed(2);
-            document.getElementById(`ao5-${id}`).innerText = ao5;
-        }
+        document.getElementById(`date-${id}`).innerText = "Satt " + new Date(pb.d).toLocaleDateString();
     }
 
-    function showDetails(id) {
-        const data = allSolves[id];
-        if (!data) return;
-
-        document.getElementById('chart-title').innerText = eventMap[id] + " Progress";
-        
-        // Oppdater Graf
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        if (activeChart) activeChart.destroy();
-        activeChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map((_, i) => i + 1),
-                datasets: [{ label: 'Tid', data: data.map(s => s.t), borderColor: '#3498db', tension: 0.2 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // Oppdater Liste
-        const listDiv = document.getElementById('solve-list');
-        listDiv.innerHTML = '';
-        data.slice(-10).reverse().forEach(s => {
-            listDiv.innerHTML += `<div style="padding:10px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between;">
-                <b>${s.t.toFixed(2)}s</b> <span>${new Date(s.d).toLocaleDateString()}</span>
-            </div>`;
-        });
-    }
-
-    function updateStreak() {
+    function calculateStreak() {
         let dates = [];
         Object.values(allSolves).forEach(ev => ev.forEach(s => dates.push(new Date(s.d).toDateString())));
         const unique = [...new Set(dates)].length;
